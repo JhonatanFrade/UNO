@@ -14,14 +14,14 @@
 #define TAM 100 //QUANTIDADE DE CARTAS
 #define QTDE 11 //Quantidade maxima de caracter por cada vetor de string
 
-struct BARALHO{
+typedef struct{
 	char carta[TAM][QTDE];
-};
+	int quant = 0;
+}BARALHO;
 
-typedef struct
-{
+typedef struct{
     char nome[30];
-    float potenciaMotor;
+    BARALHO mao;
     int pontos;
 }USUARIO;
 
@@ -105,24 +105,15 @@ void criarCartasEspeciais(char acaoDaCarta[10], int *indice, BARALHO *cartas){
 
 void criarCartasCoringa(char acaoDaCarta[10], int *indice, BARALHO *cartas){
 	int key = *indice;
-	char corDaCarta[10];
 	char aux[10];
 	strcpy(aux, acaoDaCarta);
 	char number[5];
-	for(int tipo = 0; tipo<2; tipo++){
-		for(int num = 1; num<5; num++){
-			if(tipo==0){
-				strcpy(corDaCarta, "n");
-			}else if(tipo==1){
-				strcpy(corDaCarta, "+");
-			}
-			itoa(num,number,10);
-			strcat(corDaCarta, number);
-			strcat(acaoDaCarta, corDaCarta);
-			strcpy(cartas->carta[key], acaoDaCarta);
-			key++;
-			strcpy(acaoDaCarta, aux);	
-		}
+	for(int num = 1; num<5; num++){
+		itoa(num,number,10);
+		strcat(acaoDaCarta, number);
+		strcpy(cartas->carta[key], acaoDaCarta);
+		key++;
+		strcpy(acaoDaCarta, aux);	
 	}
 	*indice = key;
 }
@@ -131,7 +122,7 @@ void criarCartas(){
 	FILE *arq;
 	arq = abreArquivo('w', "cartas.txt");
 	
-	struct BARALHO cartas;
+	BARALHO cartas;
 	
 	char corDaCarta[10];
 	char acaoDaCarta[10];
@@ -160,11 +151,16 @@ void criarCartas(){
 	//CARTAS "pescar 2"
 	strcpy(acaoDaCarta, "pesc-"); 
 	criarCartasEspeciais(acaoDaCarta, &indice, &cartas);
-	//CARTAS "coringas que mudar de cor" e "coringas pescar quatro"
+	//CARTAS "coringas que mudar de cor"
 	strcpy(acaoDaCarta, "joker-"); 
 	criarCartasCoringa(acaoDaCarta, &indice, &cartas);
+	//CARTAS "coringas pescar quatro"
+	strcpy(acaoDaCarta, "joker+-"); 
+	criarCartasCoringa(acaoDaCarta, &indice, &cartas);
 	
-	fwrite(&cartas, sizeof(struct BARALHO), 1, arq);
+	cartas.quant = 100;
+	
+	fwrite(&cartas, sizeof(BARALHO), 1, arq);
 	fecharArquivo(arq);
 	printf("\n Criou com sucesso!\n");
 	getch();
@@ -174,24 +170,134 @@ void mostrarCartas(){
 	FILE *arq;
 	arq = abreArquivo('r', "cartas.txt");
 	
-	struct BARALHO mesa;
+	BARALHO mesa;
 	
-	fread(&mesa, sizeof(struct BARALHO), 1, arq);
+	fread(&mesa, sizeof(BARALHO), 1, arq);
 	
 	for(int i=0; i<TAM; i++){
 		printf(" Carta = %s \tPosicao [%i] \n\n",mesa.carta[i],i);
 		getch();
 	}
 	
+	printf(" A quantidade = %i\n",mesa.quant);
+	
 	fecharArquivo(arq);
+}
+
+BARALHO getBaralho(){
+	FILE *arq;
+	arq = abreArquivo('r', "cartas.txt");
+	
+	BARALHO cartas;
+	
+	fread(&cartas, sizeof(BARALHO), 1, arq);	
+	
+	fecharArquivo(arq);
+	
+	return cartas;
 }	
 
 void criarUsuario(){
 	
 }
 
+void qualEhACarta(char str[10]){
+	char * pch;
+	pch = strtok (str, "-" );
+    while ( pch != NULL ) {
+    	if( strcmp( pch, "joker") == 0 ){
+    		printf("\n Eh um coringa que muda de cor.");
+		}
+		
+		if( strcmp( pch, "joker+") == 0 ){
+    		printf("\n Eh um coringa pescar quatro.");
+		}
+		
+		if ( strcmp( pch, "az" ) == 0 ){
+            printf("\n Eh azul\n");
+        }else if( strcmp( pch, "vr" ) == 0 ){
+        	printf("\n Eh verde\n");
+		}else if( strcmp( pch, "vm" ) == 0 ){
+			printf("\n Eh vermelho\n");
+		}else if( strcmp( pch, "am" ) == 0 ){
+			printf("\n Eh amarelo\n");
+		}
+		
+		if( strcmp( pch, "bloc") == 0 ){
+    		printf("\n Eh um block");
+    		pch = strtok ( NULL, "-" );
+    		if ( strcmp( pch, "az" ) == 0 ){
+	            printf(" azul\n");
+	        }else if( strcmp( pch, "vr" ) == 0 ){
+	        	printf(" verde\n");
+			}else if( strcmp( pch, "vm" ) == 0 ){
+				printf(" vermelho\n");
+			}else if( strcmp( pch, "am" ) == 0 ){
+				printf(" amarelo\n");
+			}else{
+				printf("\n Erro na cor!");
+			}
+		}
+		
+		if( strcmp( pch, "pesc") == 0 ){
+    		printf("\n Eh um pecar 2");
+    		pch = strtok ( NULL, "-" );
+    		if ( strcmp( pch, "az" ) == 0 ){
+	            printf(" da cor azul\n");
+	        }else if( strcmp( pch, "vr" ) == 0 ){
+	        	printf(" da cor verde\n");
+			}else if( strcmp( pch, "vm" ) == 0 ){
+				printf(" da cor vermelho\n");
+			}else if( strcmp( pch, "am" ) == 0 ){
+				printf(" da cor amarelo\n");
+			}else{
+				printf("\n Erro na cor!");
+			}
+		}
+        pch = strtok ( NULL, "-" );
+    }
+}
+
+void jogar(){
+	USUARIO jogador[2];
+	BARALHO monte = getBaralho();
+	strcpy(jogador[0].nome, "jhonatan");
+	printf("\n Nome do jogador 1 = %s",jogador[0].nome);
+	strcpy(jogador[1].nome, "fulano");
+	printf("\n Nome do jogador 2 = %s",jogador[1].nome);
+	int ind = 0;
+	for(int i=0; i<7; i++){
+		ind = rand()%100;
+		strcpy(jogador[0].mao.carta[i], monte.carta[ind]);
+		jogador[0].mao.quant++;
+	}
+	for(int i=0; i<7; i++){
+		printf("\n Carta do jogador 1 [%i] = %s",i,jogador[0].mao.carta[i]);
+	}
+	printf("\n Quantidade = %i",jogador[0].mao.quant);
+	
+	ind = 0;
+	for(int i=0; i<7; i++){
+		ind = rand()%100;
+		strcpy(jogador[1].mao.carta[i], monte.carta[ind]);
+		jogador[1].mao.quant++;
+	}
+	for(int i=0; i<7; i++){
+		printf("\n Carta do jogador 2 [%i] = %s",i,jogador[1].mao.carta[i]);
+	}
+	printf("\n Quantidade = %i",jogador[1].mao.quant);
+	
+	ind = rand()%100;
+	printf("\n Carta aleatoria do monte = %s \n\n",monte.carta[ind]);
+	qualEhACarta(monte.carta[ind]);
+}
+
 void executa(int opcao){
 	switch(opcao){
+		case 1:{
+			jogar();
+			break;
+		}
 		case 2:{
 //			criarUsuario();
 			break;
@@ -238,5 +344,5 @@ int main(){
 	mostrarCartas();
 	getch();
 	menu();
-	getch();
+	return 0;
 }
